@@ -1,49 +1,68 @@
-use std::env;
-
-use serenity::{
-    async_trait,
-    model::{channel::Message, gateway::Ready},
-    all::ClientBuilder,
-    prelude::*
-};
-
-const WINTAH_GAY: &str = "Yes, Wintah does, in fact, like men.";
-
-const WINTAH_COMMAND: &str = "!gay";
-
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content == WINTAH_COMMAND {
-            if let Err(why) = msg.channel_id.say(ctx.http, WINTAH_GAY).await {
-                println!("Error sending message: {:?}", why);
-        }
-    }
-}
-
-
-async fn ready(&self, _: Context, ready: Ready) {
-    println!("{} is connected!", ready.user.name);
-    }
-}
+use std::{env, error::Error, sync::Arc};
+use twilight_cache_inmemory::{InMemoryCache, ResourceType};
+use twilight_gateway::{Event, Intents, Shard, ShardId};
+use twilight_http::Client as HttpClient;
+use dotenv::dotenv;
 
 #[tokio::main]
-async fn main() {
-    //dotenv::dotenv().ok();
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    dotenv().ok();
+    let token = env::var("DISCORD_TOKEN")?;
 
-    //let token = env::var("DISCORD_TOKEN")
-    //.expect("Expected a token in the enviroment");
+    // Specify intents requesting events about things like new and updated
+    // messages in a guild and direct messages.
+    let intents = Intents::GUILD_MESSAGES | Intents::DIRECT_MESSAGES | Intents::MESSAGE_CONTENT;
 
-    let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES;
+    // Create a single shard.
+    let mut shard = Shard::new(ShardId::ONE, token.clone(), intents);
 
-    let mut client = ClientBuilder::new(&"MTE4MDMyMTM1MzgyODY3MTUwMA.GFR7t3.HcuJEZpzQG2QEJXYn9EhGDyGLA3bjjpRfOzxW8", intents)
-    .event_handler(Handler)
-    .await
-    .expect("Err creating the client");
+    // The http client is separate from the gateway, so startup a new
+    // one, also use Arc such that it can be cloned to other threads.
+    let http = Arc::new(HttpClient::new(token));
 
-    if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why)
+    // Since we only care about messages, make the cache only process messages.
+    let cache = InMemoryCache::builder()
+        .resource_types(ResourceType::MESSAGE)
+        .build();
+
+    // Startup the event loop to process each event in the event stream as they
+    // come in.
+    loop {
+        let event = match shard.next_event().await {
+            Ok(event) => event,
+            Err(source) => {
+                tracing::warn!(?source, "error receiving event");
+
+                if source.is_fatal() {
+                    break;
+                }
+
+                continue;
+            }
+        };
+        // Update the cache.
+        cache.update(&event);
+
+        // Spawn a new task to handle the event
+        tokio::spawn(handle_event(event, Arc::clone(&http)));
     }
+
+    Ok(())
+}
+
+async fn handle_event(
+    event: Event,
+    http: Arc<HttpClient>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    match event {
+        Event::MessageCreate(msg) if msg.content == "!ping" => {
+            http.create_message(msg.channel_id).content("Pong!")?.await?;
+        }
+        Event::Ready(_) => {
+            println!("Shard is ready");
+        }
+        _ => {}
+    }
+
+    Ok(())
 }
