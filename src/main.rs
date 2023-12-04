@@ -1,111 +1,142 @@
-use std::{env, error::Error, sync::Arc};
-use twilight_cache_inmemory::{InMemoryCache, ResourceType};
-use twilight_gateway::{Event, Intents, Shard, ShardId};
-use twilight_http::{Client as HttpClient};
+use serenity::{
+    all::{GatewayIntents, GuildId, Interaction},
+    async_trait,
+    model::{channel::Message, gateway::Ready},
+    builder::{CreateInteractionResponse, CreateInteractionResponseMessage},
+    client::{Context, EventHandler},
+    Client,
+};
+use serenity_commands::{Command, CommandData, CommandOption};
+use std::env;
 use dotenv::dotenv;
-use twilight_gateway::{stream::{self, ShardEventStream}, Config};
-use twilight_model::http::interaction::{InteractionResponse, InteractionResponseData, InteractionResponseType};
-use twilight_model::id::marker::{ApplicationMarker, GuildMarker};
-use vesper::prelude::*;
-use vesper::framework::Framework;
-use twilight_model::id::Id;
 
+#[derive(Debug, CommandData)]
+enum Commands {
+    /// Ping the bot.
+    Ping,
+
+    /// Echo a message.
+    Echo {
+        /// The message to echo.
+        message: String,
+    },
+
+    /// Perform math operations.
+    Math(MathCommand),
+
+    /// one or two numbers.
+    OneOrTwo(OneOrTwo),
+
+    /// Miscaellaneaous commands.
+    Misc(MiscCommands),
+}
+
+#[derive(Debug, Command)]
+enum MathCommand {
+    /// Add two numbers.
+    Add {
+        /// The first number.
+        first: f64,
+
+        /// The second number.
+        second: f64,
+    },
+
+    /// Subtract two numbers.
+    Subtract(SubtractCommandOption),
+}
+
+#[derive(Debug, CommandOption)]
+struct SubtractCommandOption {
+    /// The first number.
+    first: f64,
+
+    /// The second number.
+    second: f64,
+}
+
+#[derive(Debug, Command)]
+enum MiscCommands {
+    /// Get the current time.
+    Time,
+
+    /// one or two numbers... inside misc!
+    OneOrTwo(OneOrTwo),
+    // /// deeper misc commands
+    // Deeper(DeeperMiscCommands), DOES NOT COMPILE! nesting 3 levels deep is not supported by the
+    // discord API, and thus this crate prevents it.
+}
+
+#[derive(Debug, Command)]
+enum DeeperMiscCommands {
+    /// how??
+    How,
+}
+
+// usable at the top level or as a subcommand!
+#[derive(Debug, Command, CommandOption)]
+struct OneOrTwo {
+    /// The first number.
+    first: f64,
+
+    /// The second number, optional.
+    second: Option<f64>,
+}
+
+struct Handler {
+    guild_id: GuildId,
+}
+
+#[async_trait]
+impl EventHandler for Handler {
+    async fn ready(&self, ctx: Context, _: serenity::model::gateway::Ready) {
+        self.guild_id
+            .set_commands(&ctx, Commands::to_command_data())
+            .await
+            .unwrap();
+    }
+
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            let command_data = Commands::from_command_data(&command.data).unwrap();
+            command
+                .create_response(
+                    ctx,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new()
+                            .content(format!("```rs\n{command_data:?}```")),
+                    ),
+                )
+                .await
+                .unwrap();
+        }
+    }
+
+    async fn message(&self, ctx: Context, msg: Message) {
+        if msg.content == "!wintah" {
+            if let Err(why) = msg.channel_id.say(&ctx.http, "Yes, Wintah does indeed like men 🥵").await {
+                println!("Error sending message: {:?}", why);
+            }
+        }
+    }
+}
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn main() {
     dotenv().ok();
-    let token = env::var("DISCORD_TOKEN")?;
+    let token = env::var("DISCORD_TOKEN").expect("expected `DISCORD_TOKEN` to be set");
+    let guild_id = env::var("DISCORD_GUILD_ID")
+        .expect("expected `DISCORD_GUILD_ID` to be set")
+        .parse()
+        .expect("expected `DISCORD_GUILD_ID` to be a valid guild ID");
 
-    let intents = Intents::GUILD_MESSAGES | Intents::DIRECT_MESSAGES | Intents::MESSAGE_CONTENT;
+        let mut client = Client::builder(token, GatewayIntents::all())
+        .event_handler(Handler { guild_id })
+        .await
+        .expect("client should be created successfully");
 
-    let mut shard = Shard::new(ShardId::ONE, token.clone(), intents);
-
-    let http = Arc::new(HttpClient::new(token));
-
-    let cache = InMemoryCache::builder()
-        .resource_types(ResourceType::MESSAGE)
-        .build();
-    
-    let app_id = Id::<ApplicationMarker>::new(env::var("APP_ID")?.parse()?);
-
-    let framework = Arc::new(
-        Framework::builder(Arc::clone(&http), app_id, ())
-            .command(hello)
-            .build()
-    );
-
-    framework.register_guild_commands(Id::<GuildMarker>::new(env::var("GUILD_ID")?.parse::<u64>()?)).await.unwrap();
-
-
-    loop {
-        let event = match shard.next_event().await {
-            Ok(event) => event,
-            Err(source) => {
-                tracing::warn!(?source, "error receiving event");
-                println!("{:?}", source);
-
-                if source.is_fatal() {
-                    println!("It broke bozo");
-                    break;
-                }
-
-                continue;
-            }
-        };
-
-        cache.update(&event);
-
-        tokio::spawn(handle_event(event, Arc::clone(&http), Arc::clone(&framework)));
-    }
-
-    Ok(())
-}
-
-async fn handle_event(
-    event: Event,
-    http: Arc<HttpClient>,
-    framework: Arc<Framework<()>>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
-    match event {
-        Event::MessageCreate(msg) if msg.content == "!ping" => {
-            http.create_message(msg.channel_id).content("pong")?.await?;
-        }
-
-        Event::MessageCreate(msg) if msg.author.name == "bigsimpconnor" => {
-            http.create_message(msg.channel_id).content("Shut up @bigsimpconnor")?.await?;
-        }
-
-        Event::InteractionCreate(i) => {
-            let clone = Arc::clone(&framework);
-            tokio::spawn(async move {
-                let inner = i.0;
-                clone.process(inner).await;
-            });
-        }
-
-        Event::Ready(_) => {
-            println!("Shard is ready");
-        }
-        _ => {}
-    }
-
-    Ok(())
-}
-
-#[command]
-#[description = "Says hello"]
-async fn hello(ctx: &SlashContext<()>) -> DefaultCommandResult {
-    ctx.interaction_client.create_response(
-        ctx.interaction.id,
-        &ctx.interaction.token,
-        &InteractionResponse {
-            kind: InteractionResponseType::ChannelMessageWithSource,
-            data: Some(InteractionResponseData {
-                content: Some(String::from("Hello world")),
-                ..Default::default()
-            })
-        }
-    ).await?;
-
-    Ok(())
+    client
+        .start()
+        .await
+        .expect("client should start successfully");
 }
