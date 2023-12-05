@@ -1,87 +1,18 @@
 use serenity::{
     all::{GatewayIntents, GuildId, Interaction},
     async_trait,
-    model::{channel::Message, gateway::Ready},
-    builder::{CreateInteractionResponse, CreateInteractionResponseMessage},
+    model::channel::Message,
     client::{Context, EventHandler},
     Client,
 };
-use serenity_commands::{Command, CommandData, CommandOption};
+use serenity_commands::CommandData;
 use std::env;
 use dotenv::dotenv;
+use slash_commands::Commands;
 
-#[derive(Debug, CommandData)]
-enum Commands {
-    /// Ping the bot.
-    Ping,
-
-    /// Echo a message.
-    Echo {
-        /// The message to echo.
-        message: String,
-    },
-
-    /// Perform math operations.
-    Math(MathCommand),
-
-    /// one or two numbers.
-    OneOrTwo(OneOrTwo),
-
-    /// Miscaellaneaous commands.
-    Misc(MiscCommands),
-}
-
-#[derive(Debug, Command)]
-enum MathCommand {
-    /// Add two numbers.
-    Add {
-        /// The first number.
-        first: f64,
-
-        /// The second number.
-        second: f64,
-    },
-
-    /// Subtract two numbers.
-    Subtract(SubtractCommandOption),
-}
-
-#[derive(Debug, CommandOption)]
-struct SubtractCommandOption {
-    /// The first number.
-    first: f64,
-
-    /// The second number.
-    second: f64,
-}
-
-#[derive(Debug, Command)]
-enum MiscCommands {
-    /// Get the current time.
-    Time,
-
-    /// one or two numbers... inside misc!
-    OneOrTwo(OneOrTwo),
-    // /// deeper misc commands
-    // Deeper(DeeperMiscCommands), DOES NOT COMPILE! nesting 3 levels deep is not supported by the
-    // discord API, and thus this crate prevents it.
-}
-
-#[derive(Debug, Command)]
-enum DeeperMiscCommands {
-    /// how??
-    How,
-}
-
-// usable at the top level or as a subcommand!
-#[derive(Debug, Command, CommandOption)]
-struct OneOrTwo {
-    /// The first number.
-    first: f64,
-
-    /// The second number, optional.
-    second: Option<f64>,
-}
+mod slash_commands;
+mod interaction_handler;
+mod message_handler;
 
 struct Handler {
     guild_id: GuildId,
@@ -97,34 +28,20 @@ impl EventHandler for Handler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(command) = interaction {
-            let command_data = Commands::from_command_data(&command.data).unwrap();
-            command
-                .create_response(
-                    ctx,
-                    CreateInteractionResponse::Message(
-                        CreateInteractionResponseMessage::new()
-                            .content(format!("```rs\n{command_data:?}```")),
-                    ),
-                )
-                .await
-                .unwrap();
-        }
+        interaction_handler::interaction_create(ctx, interaction).await;
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content == "!wintah" {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Yes, Wintah does indeed like men 🥵").await {
-                println!("Error sending message: {:?}", why);
-            }
-        }
+        message_handler::message(ctx, msg).await;
     }
+
 }
 
 #[tokio::main]
 pub async fn main() {
     dotenv().ok();
     let token = env::var("DISCORD_TOKEN").expect("expected `DISCORD_TOKEN` to be set");
+
     let guild_id = env::var("DISCORD_GUILD_ID")
         .expect("expected `DISCORD_GUILD_ID` to be set")
         .parse()
@@ -140,3 +57,4 @@ pub async fn main() {
         .await
         .expect("client should start successfully");
 }
+
