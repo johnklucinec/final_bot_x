@@ -1,3 +1,7 @@
+use serenity_commands::CommandData;
+use std::env;
+use dotenv::dotenv;
+use slash_commands::Commands;
 use serenity::{
     all::{GatewayIntents, GuildId, Interaction},
     async_trait,
@@ -5,18 +9,12 @@ use serenity::{
     client::{Context, EventHandler},
     Client,
 };
-use serenity_commands::CommandData;
-use std::env;
-use dotenv::dotenv;
-use slash_commands::Commands;
 
 mod slash_commands;
 mod interaction_handler;
 mod message_handler;
 
-struct Handler {
-    guild_id: GuildId,
-}
+struct Handler { guild_id: GuildId, }
 
 #[async_trait]
 impl EventHandler for Handler {
