@@ -1,7 +1,7 @@
-use serenity_commands::CommandData;
+use serenity_commands::Commands;
 use std::env;
 use dotenv::dotenv;
-use slash_commands::Commands;
+use slash_commands::AllCommands;
 use serenity::{
     all::{GatewayIntents, GuildId, Interaction},
     async_trait,
@@ -20,7 +20,7 @@ struct Handler { guild_id: GuildId, }
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _: serenity::model::gateway::Ready) {
         self.guild_id
-            .set_commands(&ctx, Commands::to_command_data())
+            .set_commands(&ctx, AllCommands::create_commands())
             .await
             .unwrap();
     }

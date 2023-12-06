@@ -1,7 +1,12 @@
-use serenity_commands::{Command, CommandData, CommandOption};
+#![allow(dead_code, unused_variables, unused_imports, private_interfaces)]
+use serenity::all::{
+    async_trait, Client, Context, CreateInteractionResponse, CreateInteractionResponseMessage,
+    EventHandler, GatewayIntents, GuildId, Interaction,
+};
+use serenity_commands::{Command, Commands, SubCommand};
 
-#[derive(Debug, CommandData)]
-pub enum Commands {
+#[derive(Debug, Commands)]
+pub enum AllCommands {
     /// Ping the bot.
     Ping,
 
@@ -11,64 +16,48 @@ pub enum Commands {
         message: String,
     },
 
-    /// Perform math operations.
-    Math(MathCommand),
+    /// Get the latest tweet
+    Latest,
 
-    /// one or two numbers.
-    OneOrTwo(OneOrTwo),
+    /// Set a tweet
+    Tweet(TweetCommand),
+}
 
-    /// Miscaellaneaous commands.
-    Misc(MiscCommands),
+impl AllCommands {
+    pub fn run(self) -> String {
+        match self {
+            Self::Ping => "Pong!".to_string(),
+            Self::Echo { message } => message,
+            Self::Latest => get_latest(),
+            Self::Tweet(tweet) => tweet.run(),
+        }
+    }
+}
+
+fn get_latest() -> String {
+    String::from("https://fxtwitter.com/finalmouse/status/1728128856761266461")
 }
 
 #[derive(Debug, Command)]
-enum MathCommand {
-    /// Add two numbers.
-    Add {
-        /// The first number.
-        first: f64,
-
-        /// The second number.
-        second: f64,
+enum TweetCommand {
+    /// Send the past a numbers as a tweet
+    Past {
+        /// Amount of discord messages to send as a tweet
+        messages: f64,
     },
 
-    /// Subtract two numbers.
-    Subtract(SubtractCommandOption),
+    /// Send all the tweets send in the past minute as a tweet
+    Time {
+        /// Amount of minutes
+        minutes: f64,
+    },
 }
 
-#[derive(Debug, CommandOption)]
-struct SubtractCommandOption {
-    /// The first number.
-    first: f64,
-
-    /// The second number.
-    second: f64,
-}
-
-#[derive(Debug, Command)]
-enum MiscCommands {
-    /// Get the current time.
-    Time,
-
-    /// one or two numbers... inside misc!
-    OneOrTwo(OneOrTwo),
-    // /// deeper misc commands
-    // Deeper(DeeperMiscCommands), DOES NOT COMPILE! nesting 3 levels deep is not supported by the
-    // discord API, and thus this crate prevents it.
-}
-
-#[derive(Debug, Command)]
-enum DeeperMiscCommands {
-    /// how??
-    How,
-}
-
-// usable at the top level or as a subcommand!
-#[derive(Debug, Command, CommandOption)]
-struct OneOrTwo {
-    /// The first number.
-    first: f64,
-
-    /// The second number, optional.
-    second: Option<f64>,
+impl TweetCommand {
+    fn run(self) -> String {
+        match self {
+            Self::Past { messages } => format!("I will tweet the past {} discord messages", messages),
+            Self::Time { minutes } => format!("All the messages you sent in the past {} minutes, I will tweet", minutes),
+        }
+    }
 }

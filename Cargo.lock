@@ -558,6 +558,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 
 [[package]]
+name = "heck"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
+
+[[package]]
 name = "hermit-abi"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1189,9 +1195,9 @@ dependencies = [
 
 [[package]]
 name = "serenity-commands"
-version = "0.2.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fb481d3324b6819975be21e94077618fb6baec261744e353d47d62b37c18d3b"
+checksum = "50f33acc3574fa2b12dcc851d69a3af0a730b3d51ed5a2d6887a82a1fa48a58d"
 dependencies = [
  "serenity",
  "serenity-commands-macros",
@@ -1200,11 +1206,12 @@ dependencies = [
 
 [[package]]
 name = "serenity-commands-macros"
-version = "0.2.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f60946bc18962573395fe62e3d9ac1792af19e7f5e670b695f7e626fd6e6f6f2"
+checksum = "ef606f0406bb552eecbfce3a424d7a7c78c8cabd5a008fefd0f44c0d7b9a414c"
 dependencies = [
  "darling",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.39",
