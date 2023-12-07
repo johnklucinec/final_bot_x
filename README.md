@@ -1,3 +1,3 @@
-# final_bot_x - in development
+# FinalBotX - in development
 
 Readme with examples coming soon
