@@ -1,4 +1,4 @@
-# FinalBoxX - (in development)
+# FinalBotX - (in development)
 
 A multi-use discord bot made in Rust!
 
