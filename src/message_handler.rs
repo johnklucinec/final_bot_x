@@ -12,7 +12,7 @@ pub async fn message(ctx: Context, msg: Message) {
         // Create slash commands, sends the result back as a string. 
         match msg.content.as_str() {
             "!wintah" => {
-                send_message(&ctx.http, &msg.channel_id, "Yes, Wintah does indeed like men 🥵").await;
+                send_message(&ctx.http, &msg.channel_id, "Yes, Wintah does indeed like Overwatch!").await;
             }
     
             "!burger" => {
