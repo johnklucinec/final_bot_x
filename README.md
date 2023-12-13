@@ -12,7 +12,7 @@ A multi-use discord bot made in Rust!
 ## Supported commands and features
 
 ### Slash Commands
-  * /latest - Gets the latest tweet (in progress)
+  * /latest - Gets the latest tweet
   * /tweet (minutes) - posts all discord chats sent in the last x minutes to Twitter (in progress)
   * /tweet (past) - posts the last x discord messages to Twitter (in progress)
   * /ping
