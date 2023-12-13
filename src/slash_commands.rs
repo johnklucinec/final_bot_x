@@ -24,18 +24,26 @@ pub enum AllCommands {
 }
 
 impl AllCommands {
-    pub fn run(self) -> String {
+    pub async fn run(self) -> String {
         match self {
             Self::Ping => "Pong!".to_string(),
             Self::Echo { message } => message,
-            Self::Latest => get_latest(),
+            Self::Latest => {
+                get_latest().await
+            },
             Self::Tweet(tweet) => tweet.run(),
         }
     }
 }
 
-fn get_latest() -> String {
-    String::from("https://fxtwitter.com/finalmouse/status/1728128856761266461")
+mod get_latest_tweet;
+
+async fn get_latest() -> String {
+
+    use get_latest_tweet::get_latest_tweet;
+
+    get_latest_tweet().await
+    
 }
 
 #[derive(Debug, Command)]

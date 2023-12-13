@@ -1,5 +1,5 @@
 use serenity::{
-  client::{Context},
+  client::Context,
   builder::{CreateInteractionResponse, CreateInteractionResponseMessage},
   all::Interaction,
 };
@@ -14,7 +14,7 @@ pub async fn interaction_create(ctx: Context, interaction: Interaction) {
               ctx,
               CreateInteractionResponse::Message(
                   CreateInteractionResponseMessage::new()
-                      .content(command_data.run()),
+                      .content(command_data.run().await),
               ),
           )
           .await
