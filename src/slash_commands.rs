@@ -28,9 +28,7 @@ impl AllCommands {
         match self {
             Self::Ping => "Pong!".to_string(),
             Self::Echo { message } => message,
-            Self::Latest => {
-                get_latest().await
-            },
+            Self::Latest => {get_latest().await},
             Self::Tweet(tweet) => tweet.run(),
         }
     }
@@ -39,25 +37,33 @@ impl AllCommands {
 mod get_latest_tweet;
 
 async fn get_latest() -> String {
-
     use get_latest_tweet::get_latest_tweet;
 
-    get_latest_tweet().await
-    
+    match get_latest_tweet().await {
+        Ok(tweet_link) => tweet_link,
+        Err(_) => "Error calling rettiwt-api".to_owned(),
+    }
 }
+
 
 #[derive(Debug, Command)]
 enum TweetCommand {
-    /// Send the past a numbers as a tweet
+    /// Sends the past specified messages as a tweet
     Past {
         /// Amount of discord messages to send as a tweet
-        messages: f64,
+        messages: u64,
     },
 
-    /// Send all the tweets send in the past minute as a tweet
+    /// Sends all discord messages sent in the past specified minutes as a tweet
     Time {
         /// Amount of minutes
-        minutes: f64,
+        minutes: u64,
+    },
+
+    /// Sends all the discord messages sent since (inclusive) specified discord message id
+    Since {
+        /// discord message id
+        message_id: u64,
     },
 }
 
@@ -66,6 +72,7 @@ impl TweetCommand {
         match self {
             Self::Past { messages } => format!("I will tweet the past {} discord messages", messages),
             Self::Time { minutes } => format!("All the messages you sent in the past {} minutes, I will tweet", minutes),
+            Self::Since { message_id } => format!("I will tweet all the messages since {}", message_id),
         }
     }
 }
