@@ -1,9 +1,10 @@
 #![allow(dead_code, unused_variables, unused_imports, private_interfaces)]
 use serenity::all::{
     async_trait, Client, Context, CreateInteractionResponse, CreateInteractionResponseMessage,
-    EventHandler, GatewayIntents, GuildId, Interaction,
+    EventHandler, GatewayIntents, GuildId, Interaction, CommandInteraction, InteractionId,
 };
 use serenity_commands::{Command, Commands, SubCommand};
+use crate::message_handler::send_message;
 
 #[derive(Debug, Commands)]
 pub enum AllCommands {
@@ -21,15 +22,23 @@ pub enum AllCommands {
 
     /// Set a tweet
     Tweet(TweetCommand),
+
+    /// Register twitter token
+    Register {
+        /// twitter token
+        token: String,
+    },
 }
 
 impl AllCommands {
-    pub async fn run(self) -> String {
+    pub async fn run(self, command_info: &CommandInteraction, ctx: &Context) -> String {
+
         match self {
             Self::Ping => "Pong!".to_string(),
             Self::Echo { message } => message,
-            Self::Latest => {get_latest().await},
+            Self::Latest => get_latest().await,
             Self::Tweet(tweet) => tweet.run(),
+            Self::Register { token } => register_user(token, &command_info, &ctx).await,
         }
     }
 }
@@ -43,6 +52,17 @@ async fn get_latest() -> String {
         Ok(tweet_link) => tweet_link,
         Err(_) => "Error calling rettiwt-api".to_owned(),
     }
+}
+
+async fn register_user(token: String, command_info: &CommandInteraction, ctx: &Context) -> String {
+
+    let user_id = command_info.id.to_string();
+    let channel = command_info.channel_id;
+
+    send_message(&ctx.http, &command_info.channel_id, "🍔").await;
+
+    
+    format!("We have succesfully registered your token {}, {}", user_id, token)
 }
 
 

@@ -1195,9 +1195,9 @@ dependencies = [
 
 [[package]]
 name = "serenity-commands"
-version = "0.4.0"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50f33acc3574fa2b12dcc851d69a3af0a730b3d51ed5a2d6887a82a1fa48a58d"
+checksum = "c877d915c58c6cc14ed56b13cd4dac6acfb22911f907d1268fcdfb229d2e85e3"
 dependencies = [
  "serenity",
  "serenity-commands-macros",

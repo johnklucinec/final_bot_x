@@ -48,7 +48,7 @@ pub async fn message(ctx: Context, msg: Message) {
 }
 
 // contruct commands that respond to messages
-async fn send_message(http: &Http, channel_id: &ChannelId, message: &str) {
+pub async fn send_message(http: &Http, channel_id: &ChannelId, message: &str) {
     if let Err(why) = channel_id.say(http, message).await {
         println!("Error sending message: {:?}", why);
     }

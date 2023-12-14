@@ -11,10 +11,11 @@ pub async fn interaction_create(ctx: Context, interaction: Interaction) {
       let command_data = AllCommands::from_command_data(&command.data).unwrap();
       command
           .create_response(
-              ctx,
+              &ctx,
               CreateInteractionResponse::Message(
                   CreateInteractionResponseMessage::new()
-                      .content(command_data.run().await),
+                      .content(command_data.run(&command, &ctx).await)
+                      .ephemeral(true),
               ),
           )
           .await
