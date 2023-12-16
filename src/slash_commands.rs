@@ -4,7 +4,7 @@ use serenity::all::{
     EventHandler, GatewayIntents, GuildId, Interaction, CommandInteraction, InteractionId,
 };
 use serenity_commands::{Command, Commands, SubCommand};
-use crate::message_handler::send_message;
+use crate::{message_handler::send_message, slash_commands::process_token::Tokens};
 
 #[derive(Debug, Commands)]
 pub enum AllCommands {
@@ -44,6 +44,7 @@ impl AllCommands {
 }
 
 mod get_latest_tweet;
+mod process_token;
 
 async fn get_latest() -> String {
     use get_latest_tweet::get_latest_tweet;
@@ -55,15 +56,20 @@ async fn get_latest() -> String {
 }
 
 async fn register_user(token: String, command_info: &CommandInteraction, ctx: &Context) -> String {
-
-    let user_id = command_info.id.to_string();
+    let user_id = command_info.user.id.to_string();
     let channel = command_info.channel_id;
 
-    send_message(&ctx.http, &command_info.channel_id, "🍔").await;
+    let mut tokens = Tokens::load().unwrap_or_default();
 
-    
-    format!("We have succesfully registered your token {}, {}", user_id, token)
+    // Call add_token
+    tokens.add_token(user_id.clone(), token.clone());
+
+    // Save the updated tokens
+    //tokens.save().unwrap();
+
+    format!("We have successfully registered your token, {}", user_id)
 }
+
 
 
 #[derive(Debug, Command)]

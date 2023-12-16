@@ -8,3 +8,8 @@ tokio = { version = "1.14.0", features = ["rt", "rt-multi-thread", "macros", "pr
 serenity = "0.12.0"
 serenity-commands = "0.4.3"
 dotenv = "0.15.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+fs2 = "0.4.3"
+
+
