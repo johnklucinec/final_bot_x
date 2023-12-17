@@ -1,20 +1,22 @@
-use serenity_commands::Commands;
-use std::env;
 use dotenv::dotenv;
-use slash_commands::AllCommands;
 use serenity::{
     all::{GatewayIntents, GuildId, Interaction},
     async_trait,
-    model::channel::Message,
     client::{Context, EventHandler},
+    model::channel::Message,
     Client,
 };
+use serenity_commands::Commands;
+use slash_commands::AllCommands;
+use std::env;
 
-mod slash_commands;
 mod interaction_handler;
 mod message_handler;
+mod slash_commands;
 
-struct Handler { guild_id: GuildId, }
+struct Handler {
+    guild_id: GuildId,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -32,7 +34,6 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
         message_handler::message(ctx, msg).await;
     }
-
 }
 
 #[tokio::main]
@@ -45,7 +46,7 @@ pub async fn main() {
         .parse()
         .expect("expected `DISCORD_GUILD_ID` to be a valid guild ID");
 
-        let mut client = Client::builder(token, GatewayIntents::all())
+    let mut client = Client::builder(token, GatewayIntents::all())
         .event_handler(Handler { guild_id })
         .await
         .expect("client should be created successfully");
@@ -55,4 +56,3 @@ pub async fn main() {
         .await
         .expect("client should start successfully");
 }
-
