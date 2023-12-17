@@ -1,10 +1,12 @@
 #![allow(dead_code, unused_variables, unused_imports, private_interfaces)]
-use serenity::all::{
+use std::fs::File;
+
+use serenity::{all::{
     async_trait, Client, Context, CreateInteractionResponse, CreateInteractionResponseMessage,
     EventHandler, GatewayIntents, GuildId, Interaction, CommandInteraction, InteractionId,
-};
+}, utils::MessageBuilder};
 use serenity_commands::{Command, Commands, SubCommand};
-use crate::{message_handler::send_message, slash_commands::process_token::Tokens};
+use crate::{message_handler::post_message, slash_commands::process_token::Tokens};
 
 #[derive(Debug, Commands)]
 pub enum AllCommands {
@@ -12,9 +14,11 @@ pub enum AllCommands {
     Ping,
 
     /// Echo a message.
-    Echo {
+    Post {
         /// The message to echo.
         message: String,
+        // The attachment?
+        //attatchment: File,
     },
 
     /// Get the latest tweet
@@ -35,10 +39,10 @@ impl AllCommands {
 
         match self {
             Self::Ping => "Pong!".to_string(),
-            Self::Echo { message } => message,
+            Self::Post { message} => post(message, &command_info, &ctx).await,
             Self::Latest => get_latest().await,
             Self::Tweet(tweet) => tweet.run(),
-            Self::Register { token } => register_user(token, &command_info, &ctx).await,
+            Self::Register { token } => register_user(token, &command_info).await,
         }
     }
 }
@@ -55,20 +59,36 @@ async fn get_latest() -> String {
     }
 }
 
-async fn register_user(token: String, command_info: &CommandInteraction, ctx: &Context) -> String {
+async fn post(message: String, command_info: &CommandInteraction, ctx: &Context) -> String {
+
+    match post_message(&ctx.http, &command_info.channel_id, &message).await {
+        Ok(_) => {
+            String::from("Done!")
+        },
+        Err(why) => {
+            format!("Error sending message: {:?}", why)
+        }
+    }
+}
+
+async fn register_user(token: String, command_info: &CommandInteraction) -> String {
     let user_id = command_info.user.id.to_string();
     let channel = command_info.channel_id;
 
     let mut tokens = Tokens::load().unwrap_or_default();
 
-    // Call add_token
-    tokens.add_token(user_id.clone(), token.clone());
-
-    // Save the updated tokens
-    //tokens.save().unwrap();
-
-    format!("We have successfully registered your token, {}", user_id)
+    match tokens.find_token_by_user_id(&user_id) {
+        None => {
+            tokens.add_token(user_id.clone(), token.clone());
+            format!("We have successfully registered your token, <@{}>", user_id)
+        }
+        Some(_) => {
+            tokens.add_token(user_id.clone(), token.clone());
+            format!("Your Twitter token has been updated, <@{}>", user_id)
+        }
+    }
 }
+
 
 
 

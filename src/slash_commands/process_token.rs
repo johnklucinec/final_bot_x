@@ -11,7 +11,7 @@ pub struct Tokens {
 
 impl Tokens {
     pub fn load() -> Result<Self, std::io::Error> {
-        let mut file = File::open("tokens.dat")?;
+        let file = File::open("tokens.dat")?;
         file.lock_exclusive()?;
         let tokens: Tokens = serde_json::from_reader(&file)?;
         file.unlock()?;
@@ -24,7 +24,7 @@ impl Tokens {
     }
   
 
-    fn find_token_by_user_id(&self, user_id: &str) -> Option<String> {
+    pub fn find_token_by_user_id(&self, user_id: &str) -> Option<String> {
         self.token_map.get(user_id).map(|v| v.clone())
     }
 

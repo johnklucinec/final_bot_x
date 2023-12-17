@@ -1,8 +1,9 @@
 use serenity::{
     all::{Http, ChannelId},
     client::Context,
-    model::channel::Message
+    model::channel::Message, builder
   };
+  use serenity::Error;
 
 pub async fn message(ctx: Context, msg: Message) {
 
@@ -48,8 +49,32 @@ pub async fn message(ctx: Context, msg: Message) {
 }
 
 // contruct commands that respond to messages
-pub async fn send_message(http: &Http, channel_id: &ChannelId, message: &str) {
-    if let Err(why) = channel_id.say(http, message).await {
-        println!("Error sending message: {:?}", why);
+async fn send_message(http: &Http, channel_id: &ChannelId, message: &str) {
+
+    match channel_id.say(http, message).await {
+        Ok(_) => {
+            // Message sent successfully, no further action needed
+        },
+        Err(why) => {
+            println!("Error sending message: {:?}", why);
+        }
+    }
+
+}
+
+// send message as the bot
+pub async fn post_message(http: &Http, channel_id: &ChannelId, message: &str) -> Result<(), Error> {
+    match channel_id.say(http, message).await {
+        Ok(_) => Ok(()),
+        Err(why) => Err(why),
     }
 }
+
+// send message as the bot
+pub async fn edit_message(http: &Http, channel_id: &ChannelId, message_id: u64, edited_message: builder::EditMessage) -> Result<(), Error> {
+    match channel_id.edit_message(http, message_id, edited_message).await {
+        Ok(_) => Ok(()),
+        Err(why) => Err(why),
+    }
+}
+
