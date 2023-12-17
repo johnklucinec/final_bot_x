@@ -25,7 +25,7 @@ impl Tokens {
   
 
     pub fn find_token_by_user_id(&self, user_id: &str) -> Option<String> {
-        self.token_map.get(user_id).map(|v| v.clone())
+        self.token_map.get(user_id).cloned()
     }
 
     pub fn save(&self) -> Result<(), std::io::Error> {
