@@ -16,6 +16,8 @@ use serenity::{
 };
 use serenity_commands::{Command, Commands, SubCommand};
 
+mod post_tweet;
+
 #[derive(Debug, Commands)]
 pub enum AllCommands {
     /// Ping the bot.
@@ -58,7 +60,7 @@ impl AllCommands {
                 message,
             } => edit(message, command_info, ctx, message_id).await,
             Self::Latest => get_latest(command_info, ctx).await,
-            Self::Tweet(tweet) => tweet.run(),
+            Self::Tweet(tweet) => tweet.run(command_info).await,
             Self::Register { token } => register_user(token, command_info).await,
         }
     }
@@ -159,31 +161,46 @@ enum TweetCommand {
     },
 
     /// Sends all discord messages sent in the past specified minutes as a tweet
-    Time {
+    Message {
         /// Amount of minutes
-        minutes: u64,
+        message: String,
     },
 
     /// Sends all the discord messages sent since (inclusive) specified discord message id
     Since {
         /// discord message id
-        message_id: u64,
+        message_id: String,
     },
 }
 
 impl TweetCommand {
-    fn run(self) -> String {
+    async fn run(self, command_info: &CommandInteraction) -> String {
         match self {
             Self::Past { messages } => {
-                format!("I will tweet the past {} discord messages", messages)
-            }
-            Self::Time { minutes } => format!(
-                "All the messages you sent in the past {} minutes, I will tweet",
-                minutes
-            ),
+                tweet_past_messages(messages, command_info).await
+            },
+            Self::Message { message } => {
+                tweet_message(message, command_info).await
+            },
             Self::Since { message_id } => {
                 format!("I will tweet all the messages since {}", message_id)
-            }
+            },
         }
     }
+}
+
+async fn tweet_past_messages(messages: u64, command_info: &CommandInteraction) -> String {
+    let user_id = command_info.user.id;
+
+    let all_messages: String = "sdf".to_string();
+
+    format!("I will tweet the past {} discord messages", messages)
+}
+
+async fn tweet_message(message: String, command_info: &CommandInteraction) -> String {
+    let user_id = command_info.user.id;
+
+    let all_messages: String = "sdf".to_string();
+
+    format!("All the messages you sent in the past {} minutes, I will tweet", message)
 }
