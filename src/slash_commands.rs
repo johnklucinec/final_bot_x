@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_variables, unused_imports, private_interfaces)]
-use std::{env, fs::File};
+use std::{env, fs::File, vec};
 
 use crate::{
     message_handler::{edit_message, post_message},
@@ -7,11 +7,12 @@ use crate::{
 };
 use serenity::{
     all::{
-        async_trait, Client, CommandInteraction, Context, CreateInteractionResponse,
+        async_trait, ChannelId, Client, CommandInteraction, Context, CreateInteractionResponse,
         CreateInteractionResponseMessage, EventHandler, GatewayIntents, GuildId, Interaction,
-        InteractionId,
+        InteractionId, MessageId, UserId,
     },
-    builder::EditMessage,
+    builder::{EditMessage, GetMessages},
+    http,
     utils::MessageBuilder,
 };
 use serenity_commands::{Command, Commands, SubCommand};
@@ -60,7 +61,7 @@ impl AllCommands {
                 message,
             } => edit(message, command_info, ctx, message_id).await,
             Self::Latest => get_latest(command_info, ctx).await,
-            Self::Tweet(tweet) => tweet.run(command_info).await,
+            Self::Tweet(tweet) => tweet.run(command_info, ctx).await,
             Self::Register { token } => register_user(token, command_info).await,
         }
     }
@@ -155,9 +156,9 @@ async fn register_user(token: String, command_info: &CommandInteraction) -> Stri
 #[derive(Debug, Command)]
 enum TweetCommand {
     /// Sends the past specified messages as a tweet
-    Past {
+    MessageId {
         /// Amount of discord messages to send as a tweet
-        messages: u64,
+        message_id: String,
     },
 
     /// Sends all discord messages sent in the past specified minutes as a tweet
@@ -165,36 +166,92 @@ enum TweetCommand {
         /// Amount of minutes
         message: String,
     },
-
-    /// Sends all the discord messages sent since (inclusive) specified discord message id
-    Since {
-        /// discord message id
-        message_id: String,
-    },
 }
 
 impl TweetCommand {
-    async fn run(self, command_info: &CommandInteraction) -> String {
+    /// The `run` function takes a `TweetCommand` and a `command_info` and executes the command.
+    /// It matches on the `TweetCommand` to determine what to do.
+    async fn run(self, command_info: &CommandInteraction, ctx: &Context) -> String {
         match self {
-            Self::Past { messages } => {
-                tweet_past_messages(messages, command_info).await
-            },
-            Self::Message { message } => {
-                tweet_message(message, command_info).await
-            },
-            Self::Since { message_id } => {
-                format!("I will tweet all the messages since {}", message_id)
-            },
+            Self::MessageId { message_id } => tweet_message_id(message_id, command_info, ctx).await,
+            Self::Message { message } => tweet_message(message, command_info).await,
         }
     }
 }
 
-async fn tweet_past_messages(messages: u64, command_info: &CommandInteraction) -> String {
+/// The `tweet_message_id` function retrieves the messages from a channel, converts them to a vector of strings,
+/// and prints each string on a new line.
+/// It returns a string "Done" upon completion.
+async fn tweet_message_id(
+    message_id: String,
+    command_info: &CommandInteraction,
+    ctx: &Context,
+) -> String {
     let user_id = command_info.user.id;
+    let message_id_int = message_id.parse::<u64>();
 
-    let all_messages: String = "sdf".to_string();
+    if message_id_int.is_err() {
+        // If parsing fails, return the message_id as string
+        return format!("'{}' is an invalid integer", message_id.clone());
+    }
 
-    format!("I will tweet the past {} discord messages", messages)
+    // get all the messages sent since the given message_id:
+    let channel_id = ChannelId::new(command_info.channel_id.into());
+    // <TODO> If the bot does not have access to the channel, handle that
+
+    let builder = GetMessages::new()
+        .after(MessageId::new(message_id_int.unwrap()))
+        .limit(100);
+    // <TODO> If the message id is invalid, handle that
+
+    let _messages = channel_id.messages(&ctx.http, builder).await;
+    // <TODO> If this doesn't work for some reason, handle that
+
+    // gets the message content, and divides it into strings with a max length of 280 characters
+    let vec_of_messages = messages_to_string_vec(ctx, channel_id, builder, user_id).await;
+
+    for message in &vec_of_messages {
+        println!("{}", message);
+    }
+
+    String::from("Done")
+}
+
+/// The `messages_to_string_vec` function retrieves messages from a channel
+/// and converts them to a vector of strings.
+/// It only saves the messages sent by the user specified by `user_id`.
+/// It goes through the messages backwards to stay in chronological order.
+/// Once the total length of the messages exceeds 280 characters, it starts a new string.
+async fn messages_to_string_vec(
+    ctx: &Context,
+    channel_id: ChannelId,
+    builder: GetMessages,
+    user_id: UserId,
+) -> Vec<String> {
+    let messages = channel_id.messages(&ctx.http, builder).await.unwrap();
+    let mut message_strings = vec![String::new()];
+    let mut current_string = 0;
+
+    // Need to go through the messages backwards to stay in chronological order
+    for message in messages.iter().rev() {
+        // Check if the author of the message is the user we're interested in
+        if message.author.id != user_id {
+            continue;
+        }
+
+        let content = &message.content;
+        if message_strings[current_string].len() + content.len() > 280 {
+            // Start a new string if adding the next line makes it over 280 characters
+            message_strings.push(String::new());
+            current_string += 1;
+        }
+
+        // Add the message to the current string, followed by a space
+        message_strings[current_string].push_str(content);
+        message_strings[current_string].push(' ');
+    }
+
+    message_strings
 }
 
 async fn tweet_message(message: String, command_info: &CommandInteraction) -> String {
@@ -202,5 +259,8 @@ async fn tweet_message(message: String, command_info: &CommandInteraction) -> St
 
     let all_messages: String = "sdf".to_string();
 
-    format!("All the messages you sent in the past {} minutes, I will tweet", message)
+    format!(
+        "All the messages you sent in the past {} minutes, I will tweet",
+        message
+    )
 }

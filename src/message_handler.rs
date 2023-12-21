@@ -15,7 +15,8 @@ pub async fn message(ctx: Context, msg: Message) {
                 send_message(
                     &ctx.http,
                     &msg.channel_id,
-                    "Yes, Wintah does indeed like Overwatch!",
+                    "I am now working on my discord bot bozo!
+                    Get Better",
                 )
                 .await;
             }
