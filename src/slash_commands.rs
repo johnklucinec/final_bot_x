@@ -115,6 +115,8 @@ async fn edit(
         return format!("'{}' is an invalid integer", message_id.clone());
     }
 
+    // prob can make this look better
+
     match edit_message(
         &ctx.http,
         &command_info.channel_id,
@@ -197,18 +199,31 @@ async fn tweet_message_id(
 
     // get all the messages sent since the given message_id:
     let channel_id = ChannelId::new(command_info.channel_id.into());
-    // <TODO> If the bot does not have access to the channel, handle that
 
-    let builder = GetMessages::new()
-        .after(MessageId::new(message_id_int.unwrap()))
-        .limit(100);
-    // <TODO> If the message id is invalid, handle that
+    let new_message_id = match message_id_int.map(MessageId::new) {
+        Ok(id) => id,
+        Err(e) => {
+            return format!("Error creating MessageId: {}", e);
+        }
+    };
+
+    let builder = GetMessages::new().after(new_message_id).limit(100);
 
     let _messages = channel_id.messages(&ctx.http, builder).await;
-    // <TODO> If this doesn't work for some reason, handle that
+
+    if _messages.is_err() {
+        return String::from(
+            "Error getting the messages. Does the bot have access to this channel?",
+        );
+    }
+
+    // For some reason it does not include the message that has the message id
 
     // gets the message content, and divides it into strings with a max length of 280 characters
     let vec_of_messages = messages_to_string_vec(ctx, channel_id, builder, user_id).await;
+
+    // make sure to use hash map entry to see if user has a key or nah
+    // make sure there are error messages for token error, user token error, and connection error.
 
     for message in &vec_of_messages {
         println!("{}", message);
