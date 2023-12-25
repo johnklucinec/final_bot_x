@@ -1,23 +1,22 @@
 #![allow(dead_code, unused_variables, unused_imports, private_interfaces)]
-use std::{env, fs::File, vec};
+use std::{env, fs::File};
+use serenity::{
+    prelude::*,
+    builder::{EditMessage, GetMessages},
+    utils::MessageBuilder, all::CommandInteraction,
+};
+use serenity_commands::{Command, Commands, SubCommand};
 
 use crate::{
     message_handler::{edit_message, post_message},
     slash_commands::process_token::Tokens,
+    slash_commands::send_tweet_commands::{tweet_message_id, tweet_message},
 };
-use serenity::{
-    all::{
-        async_trait, ChannelId, Client, CommandInteraction, Context, CreateInteractionResponse,
-        CreateInteractionResponseMessage, EventHandler, GatewayIntents, GuildId, Interaction,
-        InteractionId, MessageId, UserId,
-    },
-    builder::{EditMessage, GetMessages},
-    http,
-    utils::MessageBuilder,
-};
-use serenity_commands::{Command, Commands, SubCommand};
 
+mod send_tweet_commands;
 mod post_tweet;
+mod get_latest_tweet;
+mod process_token;
 
 #[derive(Debug, Commands)]
 pub enum AllCommands {
@@ -67,22 +66,18 @@ impl AllCommands {
     }
 }
 
-mod get_latest_tweet;
-mod process_token;
-
-#[allow(unused_assignments)]
 async fn get_latest(command_info: &CommandInteraction, ctx: &Context) -> String {
     use get_latest_tweet::get_latest_tweet;
     let discord_role = env::var("TWITTER_ROLE").expect("expected `TWITTER_ROLE` to be set");
 
-    let mut tweet_link = String::new();
+    let mut _tweet_link = String::new();
 
     match get_latest_tweet().await {
-        Ok(link) => tweet_link = link,
+        Ok(link) => _tweet_link = link,
         Err(err) => return format!("Error calling rettiwt-api: {}", err),
     }
 
-    let message = format!("<@&{}>\n\n{}", discord_role, tweet_link);
+    let message = format!("<@&{}>\n\n{}", discord_role, _tweet_link);
     post(message, command_info, ctx).await
 }
 
@@ -114,8 +109,6 @@ async fn edit(
         // If parsing fails, return the message_id as string
         return format!("'{}' is an invalid integer", message_id.clone());
     }
-
-    // prob can make this look better
 
     match edit_message(
         &ctx.http,
@@ -170,6 +163,7 @@ enum TweetCommand {
     },
 }
 
+
 impl TweetCommand {
     /// The `run` function takes a `TweetCommand` and a `command_info` and executes the command.
     /// It matches on the `TweetCommand` to determine what to do.
@@ -181,101 +175,3 @@ impl TweetCommand {
     }
 }
 
-/// The `tweet_message_id` function retrieves the messages from a channel, converts them to a vector of strings,
-/// and prints each string on a new line.
-/// It returns a string "Done" upon completion.
-async fn tweet_message_id(
-    message_id: String,
-    command_info: &CommandInteraction,
-    ctx: &Context,
-) -> String {
-    let user_id = command_info.user.id;
-    let message_id_int = message_id.parse::<u64>();
-
-    if message_id_int.is_err() {
-        // If parsing fails, return the message_id as string
-        return format!("'{}' is an invalid integer", message_id.clone());
-    }
-
-    // get all the messages sent since the given message_id:
-    let channel_id = ChannelId::new(command_info.channel_id.into());
-
-    let new_message_id = match message_id_int.map(MessageId::new) {
-        Ok(id) => id,
-        Err(e) => {
-            return format!("Error creating MessageId: {}", e);
-        }
-    };
-
-    let builder = GetMessages::new().after(new_message_id).limit(100);
-
-    let _messages = channel_id.messages(&ctx.http, builder).await;
-
-    if _messages.is_err() {
-        return String::from(
-            "Error getting the messages. Does the bot have access to this channel?",
-        );
-    }
-
-    // For some reason it does not include the message that has the message id
-
-    // gets the message content, and divides it into strings with a max length of 280 characters
-    let vec_of_messages = messages_to_string_vec(ctx, channel_id, builder, user_id).await;
-
-    // make sure to use hash map entry to see if user has a key or nah
-    // make sure there are error messages for token error, user token error, and connection error.
-
-    for message in &vec_of_messages {
-        println!("{}", message);
-    }
-
-    String::from("Done")
-}
-
-/// The `messages_to_string_vec` function retrieves messages from a channel
-/// and converts them to a vector of strings.
-/// It only saves the messages sent by the user specified by `user_id`.
-/// It goes through the messages backwards to stay in chronological order.
-/// Once the total length of the messages exceeds 280 characters, it starts a new string.
-async fn messages_to_string_vec(
-    ctx: &Context,
-    channel_id: ChannelId,
-    builder: GetMessages,
-    user_id: UserId,
-) -> Vec<String> {
-    let messages = channel_id.messages(&ctx.http, builder).await.unwrap();
-    let mut message_strings = vec![String::new()];
-    let mut current_string = 0;
-
-    // Need to go through the messages backwards to stay in chronological order
-    for message in messages.iter().rev() {
-        // Check if the author of the message is the user we're interested in
-        if message.author.id != user_id {
-            continue;
-        }
-
-        let content = &message.content;
-        if message_strings[current_string].len() + content.len() > 280 {
-            // Start a new string if adding the next line makes it over 280 characters
-            message_strings.push(String::new());
-            current_string += 1;
-        }
-
-        // Add the message to the current string, followed by a space
-        message_strings[current_string].push_str(content);
-        message_strings[current_string].push(' ');
-    }
-
-    message_strings
-}
-
-async fn tweet_message(message: String, command_info: &CommandInteraction) -> String {
-    let user_id = command_info.user.id;
-
-    let all_messages: String = "sdf".to_string();
-
-    format!(
-        "All the messages you sent in the past {} minutes, I will tweet",
-        message
-    )
-}
