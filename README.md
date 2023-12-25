@@ -15,12 +15,12 @@ A multi-use discord bot made in Rust!
 
 ### Slash Commands
   * /latest - Gets the latest tweet from Finalmouse. Currently, if the latest tweet is a retweet, it will grab that.
-  * /tweet (minutes) - posts all discord chats sent in the last x minutes to Twitter (in progress)
-  * /tweet (past) - posts the last x discord messages to Twitter (in progress)
-  * /tweet (message_id) - post all the messages including and after the given message (in progress)
+  * /tweet (message) - tweets the message that was typed into the command
+  * /tweet (message_id) - post all the messages including and after the given message
   * /register (twitter_token) - allows a user to register thier twitter token
   * /post (message) - post something on behalf of the discord bot
   * /edit (message_id) - edit any message sent by FinalBotX. This is helpful if you have a channel where you want to keep clutter free and want mutliple people to be able to change. 
+  * /ping - test to see if the bot works 
   * more to come...
 ### Message Commands (listeners) 
   * !rules (coming soon)
