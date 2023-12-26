@@ -1,8 +1,6 @@
 use serenity::{all::{CommandInteraction, ChannelId, MessageId, UserId}, client::Context, builder::GetMessages};
 use super::{process_token::Tokens, post_tweet};
 
-
-
 /// The `tweet_message_id` function retrieves the messages from a channel, converts them to a vector of strings,
 /// and prints each string on a new line.
 pub async fn tweet_message_id(

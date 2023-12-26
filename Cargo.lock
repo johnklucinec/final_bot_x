@@ -384,6 +384,7 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "fs2",
+ "lazy_static",
  "reqwest",
  "serde",
  "serde_json",

@@ -6,17 +6,148 @@ use serenity::{
     model::channel::Message,
 };
 
+//const EXCLUDED_ROLES: [&str; 6] = ["791022529648525322", "617233056058703872", "1135729017459318905", "617219459631022110", "1135728913918738564", "907401992236855326"];
+//const DO_NOT_PING: [&str; 3] = ["1135729017459318905", "617233056058703872", "617169288310292508"];
+
+const EXCLUDED_ROLES: [&str; 6] = [
+    "1122761353678028871",
+    "617233056058703872",
+    "1135729017459318905",
+    "617219459631022110",
+    "1135728913918738564",
+    "907401992236855326",
+];
+const DO_NOT_PING: [&str; 3] = [
+    "1185786947914977321",
+    "617233056058703872",
+    "617169288310292508",
+];
+
+
+
 pub async fn message(ctx: Context, msg: Message) {
     // Listnen if the message is a command
     if msg.content.starts_with('!') {
         // Create slash commands, sends the result back as a string.
         match msg.content.as_str() {
-            "!wintah" => {
+            "!rule1" => {
                 send_message(
                     &ctx.http,
                     &msg.channel_id,
-                    "I am now working on my discord bot bozo!
-                    Get Better",
+                    "Keep conversation topics within the related channels provided.",
+                )
+                .await;
+            }
+
+            "!rule2" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "If you have a question about something that people do not know about in general open a ticket. <#${820850105552207872}>",
+                )
+                .await;
+            }
+
+            "!rule3" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "No explicit posts about politics, racism, suicide, mental illnesses, other forms of disabilities, targeted harassment, violence, drugs, sex, underage individuals, death, gore, etc. Please use discretion where appropriate.",
+                )
+                .await;
+            }
+
+            "!rule4" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "No impersonation, doxing, or revealing of unwanted personal information allowed, if possible, ask for consent to post a picture that has another user in the picture.",
+                )
+                .await;
+            }
+
+            "!rule5" => {
+                send_message(&ctx.http, &msg.channel_id, "No explicit NSFW content.").await;
+            }
+
+            "!rule6" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "No offensive or rule breaking names and profiles.",
+                )
+                .await;
+            }
+
+            "!rule7" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "Do not troll, be toxic, or have heated arguments. Take them to private messages or another place outside of this server.
+                    ",
+                )
+                .await;
+            }
+
+            "!rule8" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "No spamming or excessive pinging of users/moderators.",
+                )
+                .await;
+            }
+
+            "!rule9" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "No advertisements or promoting any products.",
+                )
+                .await;
+            }
+
+            "!rule10" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "Use common sense. Moderation team acts at their own discretion, and has the final say.",
+                )
+                .await;
+            }
+
+            "!rule11" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "Do not ask for any of the roles.",
+                )
+                .await;
+            }
+
+            "!rule12" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "DO NOT PING Finalboy or Finalmouse Employees.",
+                )
+                .await;
+            }
+
+            "!rule13" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "No reselling/second hand buying in this server. Use appropriate marketplaces for that.",
+                )
+                .await;
+            }
+
+            "!rule14" => {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "For all Finalmouse order inquiries, send an e-mail to support@finalmouse.com.",
                 )
                 .await;
             }
@@ -29,20 +160,46 @@ pub async fn message(ctx: Context, msg: Message) {
         }
     }
 
-    // Example to scan the contents of every message for a certain word. Excludes bot from scan.
-    if msg.author.id != ctx.cache.current_user().id && msg.content.as_str().contains("rancho") {
-        send_message(&ctx.http, &msg.channel_id, "Who is Rancho?").await;
-    }
+    // Check if the message mentions a user. Might want to create it's own handler for it. 
+    if !msg.mentions.is_empty() {
+        // Fetch the Member object associated with the Message
+        let guild_id = msg.guild_id.expect("Message must be from a guild");
+        let member = guild_id
+            .member(&ctx.http, msg.author.id)
+            .await
+            .expect("Failed to get member");
 
-    // Scan the messages of a certain user, and respond with String.
-    match msg.author.name.as_str() {
-        "racho" => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Ok Rachel").await {
-                println!("Error sending message: {:?}", why);
+        // Check if the member has any of the excluded roles
+        let has_excluded_role = member
+            .roles
+            .iter()
+            .any(|role| EXCLUDED_ROLES.contains(&role.to_string().as_str()));
+        if has_excluded_role {
+            return;
+        }
+
+        // Check if the message mentions a user with a role in DO_NOT_PING
+        for mention in &msg.mentions {
+            let mentioned_member = guild_id
+                .member(&ctx.http, mention.id)
+                .await
+                .expect("Failed to get mentioned member");
+            let mentions_do_not_ping = mentioned_member
+                .roles
+                .iter()
+                .any(|role| DO_NOT_PING.contains(&role.to_string().as_str()));
+            if mentions_do_not_ping {
+                send_message(
+                    &ctx.http,
+                    &msg.channel_id,
+                    "Do not ping Finalboy or Finalmouse Staff",
+                )
+                .await;
+                break;
             }
         }
-        _ => {}
     }
+
 }
 
 // contruct commands that respond to messages
