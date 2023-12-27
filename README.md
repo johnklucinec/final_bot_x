@@ -1,6 +1,8 @@
 # FinalBotX
 
-A multi-use discord bot made in Rust!
+A multi-use discord bot made for the Finalmouse discord server.
+
+I made this bot to help me learn Rust. I was not contracted to do this, I did this in my own free time. 
 
 ## Features
   * Made with Rust (fast)

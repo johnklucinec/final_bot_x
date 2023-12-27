@@ -52,7 +52,7 @@ pub async fn message(ctx: Context, msg: Message) {
                 send_message(
                     &ctx.http,
                     &msg.channel_id,
-                    "If you have a question about something that people do not know about in general open a ticket. <#${820850105552207872}>",
+                    "If you have a question about something that people do not know about in general open a ticket. <#$820850105552207872>",
                 )
                 .await;
             }
