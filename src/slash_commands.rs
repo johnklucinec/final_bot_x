@@ -1,11 +1,10 @@
-#![allow(dead_code, unused_variables, unused_imports, private_interfaces)]
-use std::{env, fs::File};
+use std::env;
 use serenity::{
     prelude::*,
-    builder::{EditMessage, GetMessages},
-    utils::MessageBuilder, all::CommandInteraction,
+    builder::EditMessage,
+    all::CommandInteraction,
 };
-use serenity_commands::{Command, Commands, SubCommand};
+use serenity_commands::{Command, Commands};
 
 use crate::{
     message_handler::{edit_message, post_message},
@@ -81,6 +80,7 @@ async fn get_latest(command_info: &CommandInteraction, ctx: &Context) -> String 
     post(message, command_info, ctx).await
 }
 
+// Post a message on behalf of the bot
 async fn post(message: String, command_info: &CommandInteraction, ctx: &Context) -> String {
     match post_message(&ctx.http, &command_info.channel_id, &message).await {
         Ok(_) => String::from("Done!"),
@@ -95,6 +95,7 @@ Does the bot have write access in the server and the channel?",
     }
 }
 
+// Edit a message that the bot sent
 async fn edit(
     message: String,
     command_info: &CommandInteraction,
@@ -130,10 +131,9 @@ Did you use the correct message id?",
     }
 }
 
+// Register a user's twitter token
 async fn register_user(token: String, command_info: &CommandInteraction) -> String {
     let user_id = command_info.user.id.to_string();
-    let channel = command_info.channel_id;
-
     let mut tokens = Tokens::load().unwrap_or_default();
 
     match tokens.find_token_by_user_id(&user_id) {
@@ -149,7 +149,7 @@ async fn register_user(token: String, command_info: &CommandInteraction) -> Stri
 }
 
 #[derive(Debug, Command)]
-enum TweetCommand {
+pub enum TweetCommand {
     /// Sends the past specified messages as a tweet
     MessageId {
         /// Amount of discord messages to send as a tweet
@@ -162,7 +162,6 @@ enum TweetCommand {
         message: String,
     },
 }
-
 
 impl TweetCommand {
     /// The `run` function takes a `TweetCommand` and a `command_info` and executes the command.

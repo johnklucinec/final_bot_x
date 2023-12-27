@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
-use std::io::{Write, Read};
 use fs2::FileExt;
 use serde::{Serialize, Deserialize};
+
+/*Currently, this only works on a windows server. Need to add functionality to work on linux*/
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Tokens {
@@ -41,13 +42,3 @@ impl Tokens {
     }
 }
 
-fn manipulate_tokens() -> Result<(), std::io::Error> {
-    let mut tokens = Tokens::load().unwrap_or_default();
-
-    tokens.add_token("User1".to_string(), "Token1".to_string());
-
-    let token = tokens.find_token_by_user_id("User1");
-    println!("Found token: {:?}", token);
-
-    Ok(())
-}

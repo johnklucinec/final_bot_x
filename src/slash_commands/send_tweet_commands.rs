@@ -115,7 +115,6 @@ pub async fn tweet_message(message: String, command_info: &CommandInteraction) -
       reply: None,
   };
 
-  let user_id = command_info.user.id;
   let user_id_string = command_info.user.id.to_string();
 
   let user_token = match Tokens::load()

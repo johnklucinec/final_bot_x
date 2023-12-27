@@ -1,3 +1,5 @@
+use std::env;
+
 use serenity::Error;
 use serenity::{
     all::{ChannelId, Http},
@@ -5,24 +7,31 @@ use serenity::{
     client::Context,
     model::channel::Message,
 };
+use lazy_static::lazy_static;
 
-//const EXCLUDED_ROLES: [&str; 6] = ["791022529648525322", "617233056058703872", "1135729017459318905", "617219459631022110", "1135728913918738564", "907401992236855326"];
-//const DO_NOT_PING: [&str; 3] = ["1135729017459318905", "617233056058703872", "617169288310292508"];
+lazy_static! {
+ 
+    static ref EXCLUDED_ROLES: Vec<u64> = env::var("EXCLUDED_ROLES")
+        .expect("expected `FREETHINKER_ROLE_IDS` to be set")
+        .split(',')
+        .map(|s| s
+            .parse::<u64>()
+            .expect("Each item in FREETHINKER_ROLE_IDS must be a valid u64"))
+        .collect();
 
-const EXCLUDED_ROLES: [&str; 6] = [
-    "1122761353678028871",
-    "617233056058703872",
-    "1135729017459318905",
-    "617219459631022110",
-    "1135728913918738564",
-    "907401992236855326",
-];
-const DO_NOT_PING: [&str; 3] = [
-    "1185786947914977321",
-    "617233056058703872",
-    "617169288310292508",
-];
+    static ref DO_NOT_PING: Vec<u64> = env::var("DO_NOT_PING")
+        .expect("expected `FREETHINKER_ROLE_IDS` to be set")
+        .split(',')
+        .map(|s| s
+            .parse::<u64>()
+            .expect("Each item in FREETHINKER_ROLE_IDS must be a valid u64"))
+        .collect();
 
+    static ref GUILD_ID: u64 = env::var("DISCORD_GUILD_ID")
+        .expect("expected `DISCORD_GUILD_ID` to be set")
+        .parse()
+        .expect("expected `DISCORD_GUILD_ID` to be a valid guild ID");
+}
 
 
 pub async fn message(ctx: Context, msg: Message) {
@@ -152,7 +161,8 @@ pub async fn message(ctx: Context, msg: Message) {
                 .await;
             }
 
-            "!burger" => {
+            // borger
+            "!🍔" => {
                 send_message(&ctx.http, &msg.channel_id, "🍔").await;
             }
 
@@ -161,7 +171,7 @@ pub async fn message(ctx: Context, msg: Message) {
     }
 
     // Check if the message mentions a user. Might want to create it's own handler for it. 
-    if !msg.mentions.is_empty() {
+    if !msg.author.bot && !msg.mentions.is_empty() {
         // Fetch the Member object associated with the Message
         let guild_id = msg.guild_id.expect("Message must be from a guild");
         let member = guild_id
@@ -173,7 +183,7 @@ pub async fn message(ctx: Context, msg: Message) {
         let has_excluded_role = member
             .roles
             .iter()
-            .any(|role| EXCLUDED_ROLES.contains(&role.to_string().as_str()));
+            .any(|role| EXCLUDED_ROLES.contains(&role.get()));
         if has_excluded_role {
             return;
         }
@@ -187,7 +197,7 @@ pub async fn message(ctx: Context, msg: Message) {
             let mentions_do_not_ping = mentioned_member
                 .roles
                 .iter()
-                .any(|role| DO_NOT_PING.contains(&role.to_string().as_str()));
+                .any(|role| DO_NOT_PING.contains(&role.get()));
             if mentions_do_not_ping {
                 send_message(
                     &ctx.http,
