@@ -27,7 +27,7 @@ I made this bot to help me learn Rust. I was not contracted to do this, I did th
     * automatically breaks discord messages into strings less then 280 characters (twitters character limit).
     * user has to register their twitter token before using this command.
   * /register ```twitter_token```
-    * allows a user to register thier twitter token.
+    * allows a user to register their twitter token.
     * automatically saved so user does not have to register each time they want to tweet or if the bot restarts
   * /post ```message```
     * post something on behalf of the discord bot
