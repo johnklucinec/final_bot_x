@@ -1,20 +1,18 @@
-use std::env;
 use lazy_static::lazy_static;
 use serenity::http::Http;
 use serenity::model::id::RoleId;
 use serenity::{all::Reaction, client::Context};
+use std::env;
 
 lazy_static! {
     static ref FREETHINKER_TRIALS: u64 = env::var("FREETHINKER_TRIALS")
         .expect("expected `FREETHINKER_TRIALS` to be set")
         .parse()
         .expect("FREETHINKER_TRIALS must be a valid u64");
-
     static ref GUILD_ID: u64 = env::var("DISCORD_GUILD_ID")
         .expect("expected `DISCORD_GUILD_ID` to be set")
         .parse()
         .expect("expected `DISCORD_GUILD_ID` to be a valid guild ID");
-
     static ref FREETHINKER_ROLE_IDS: Vec<u64> = env::var("FREETHINKER_ROLE_IDS")
         .expect("expected `FREETHINKER_ROLE_IDS` to be set")
         .split(',')
@@ -91,7 +89,7 @@ async fn next_role(http: &Http, add_reaction: &Reaction) {
     }
 }
 
-// sends the user a dm if their photo does not get approved. 
+// sends the user a dm if their photo does not get approved.
 async fn dm_user(ctx: &Context, add_reaction: &Reaction) {
     let message = add_reaction
         .channel_id
@@ -101,10 +99,7 @@ async fn dm_user(ctx: &Context, add_reaction: &Reaction) {
     let user_id = message.author.id;
 
     if let Ok(dm_channel) = user_id.create_dm_channel(&ctx.http).await {
-        let error_message = format!(
-            "Sorry, your photo in {} was not approved.",
-            message.link()
-        );
+        let error_message = format!("Sorry, your photo in {} was not approved.", message.link());
         let _ = dm_channel.say(&ctx.http, error_message).await;
     }
 }

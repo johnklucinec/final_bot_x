@@ -1,5 +1,6 @@
 use std::env;
 
+use lazy_static::lazy_static;
 use serenity::Error;
 use serenity::{
     all::{ChannelId, Http},
@@ -7,10 +8,8 @@ use serenity::{
     client::Context,
     model::channel::Message,
 };
-use lazy_static::lazy_static;
 
 lazy_static! {
- 
     static ref EXCLUDED_ROLES: Vec<u64> = env::var("EXCLUDED_ROLES")
         .expect("expected `FREETHINKER_ROLE_IDS` to be set")
         .split(',')
@@ -18,7 +17,6 @@ lazy_static! {
             .parse::<u64>()
             .expect("Each item in FREETHINKER_ROLE_IDS must be a valid u64"))
         .collect();
-
     static ref DO_NOT_PING: Vec<u64> = env::var("DO_NOT_PING")
         .expect("expected `FREETHINKER_ROLE_IDS` to be set")
         .split(',')
@@ -26,13 +24,11 @@ lazy_static! {
             .parse::<u64>()
             .expect("Each item in FREETHINKER_ROLE_IDS must be a valid u64"))
         .collect();
-
     static ref GUILD_ID: u64 = env::var("DISCORD_GUILD_ID")
         .expect("expected `DISCORD_GUILD_ID` to be set")
         .parse()
         .expect("expected `DISCORD_GUILD_ID` to be a valid guild ID");
 }
-
 
 pub async fn message(ctx: Context, msg: Message) {
     // Listnen if the message is a command
@@ -170,7 +166,7 @@ pub async fn message(ctx: Context, msg: Message) {
         }
     }
 
-    // Check if the message mentions a user. Might want to create it's own handler for it. 
+    // Check if the message mentions a user. Might want to create it's own handler for it.
     if !msg.author.bot && !msg.mentions.is_empty() {
         // Fetch the Member object associated with the Message
         let guild_id = msg.guild_id.expect("Message must be from a guild");
@@ -209,7 +205,6 @@ pub async fn message(ctx: Context, msg: Message) {
             }
         }
     }
-
 }
 
 // contruct commands that respond to messages

@@ -1,7 +1,7 @@
+use fs2::FileExt;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
-use fs2::FileExt;
-use serde::{Serialize, Deserialize};
 
 /*Currently, this only works on a windows server. Need to add functionality to work on linux*/
 
@@ -23,7 +23,6 @@ impl Tokens {
         self.token_map.insert(user_id, token);
         self.save().unwrap();
     }
-  
 
     pub fn find_token_by_user_id(&self, user_id: &str) -> Option<String> {
         self.token_map.get(user_id).cloned()
@@ -41,4 +40,3 @@ impl Tokens {
         Ok(())
     }
 }
-

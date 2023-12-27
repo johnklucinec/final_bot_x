@@ -17,7 +17,7 @@ I made this bot to help me learn Rust. I was not contracted to do this, I did th
 
 ### Slash Commands
   * /latest - Gets the latest tweet from Finalmouse. 
-    * Gets the latest tweet from the Finalmouse twitter, applys fx fix, pings twitter role, and posts the tweet. 
+    * Gets the latest tweet from the Finalmouse twitter, applys fx fix, pings twitter role, and posts the tweet link in the given channel.
     * Currently, if the latest tweet is a retweet, it will grab that.
   * /tweet ```message```
     * tweets the message that was typed into the command.
@@ -32,14 +32,16 @@ I made this bot to help me learn Rust. I was not contracted to do this, I did th
   * /post ```message```
     * post something on behalf of the discord bot
   * /edit ```message_id```
-    * edit any message sent by the bot. This is helpful when you have a channel that you want to keep clutter free. It allows multiple people to edit the same message.
+    * edit any message sent by the bot. This is helpful when you have a channel that you want to keep clutter free.
+    * This allows multiple people to edit the same message.
   * /ping 
     * test to see if the bot works 
 ### Message Commands (listeners) 
   * !rule1, rule2... 
-    * The bot sends the corresponding rule in the channel where this command was typed
+    * The bot sends the corresponding rule in the channel where this command was typed.
   * Posts a message if a user pings Finalboy or Finalmouse Staff
     * This rule does not apply to users that have a role in the EXCLUDED_ROLE env.
+    * Currently sends the warning if a user responds to a message with pinging enabled.
   * Automatically gives user a role if their image is approved.
     * Only gives roles that are in the FREETHINKER_ROLE_IDS env.
     * Gives a new role when the ✅ emoji is given.

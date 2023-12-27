@@ -12,8 +12,8 @@ use std::env;
 
 mod interaction_handler;
 mod message_handler;
-mod slash_commands;
 mod reaction_handler;
+mod slash_commands;
 
 struct Handler {
     guild_id: GuildId,

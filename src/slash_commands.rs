@@ -1,21 +1,17 @@
-use std::env;
-use serenity::{
-    prelude::*,
-    builder::EditMessage,
-    all::CommandInteraction,
-};
+use serenity::{all::CommandInteraction, builder::EditMessage, prelude::*};
 use serenity_commands::{Command, Commands};
+use std::env;
 
 use crate::{
     message_handler::{edit_message, post_message},
     slash_commands::process_token::Tokens,
-    slash_commands::send_tweet_commands::{tweet_message_id, tweet_message},
+    slash_commands::send_tweet_commands::{tweet_message, tweet_message_id},
 };
 
-mod send_tweet_commands;
-mod post_tweet;
 mod get_latest_tweet;
+mod post_tweet;
 mod process_token;
+mod send_tweet_commands;
 
 #[derive(Debug, Commands)]
 pub enum AllCommands {
@@ -173,4 +169,3 @@ impl TweetCommand {
         }
     }
 }
-
